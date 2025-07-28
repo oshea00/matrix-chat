@@ -328,8 +328,8 @@ class SimpleChatClient:
 
 async def main():
     if len(sys.argv) != 5:
-        print("Usage: python chatcli.py <homeserver> <user_id> <access_token> <device_id>")
-        print("Example: python chatcli.py https://matrix.org @user:matrix.org token DEVICE123")
+        print("Usage: matrix-chat <homeserver> <user_id> <access_token> <device_id>")
+        print("Example: matrix-chat https://matrix.org @user:matrix.org token DEVICE123")
         sys.exit(1)
         
     homeserver, user_id, access_token, device_id = sys.argv[1:5]

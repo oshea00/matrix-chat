@@ -89,16 +89,35 @@ uv build
 uv pip install dist/matrix_chat-1.0.0-py3-none-any.whl
 ```
 
-## Usage
+## Installation and Usage
 
-### Get Access Token
+### Global Installation (Recommended)
+
+Install the tools globally using uv:
 ```bash
-uv run matrix-token <homeserver> <username> [device_name]
-# Example: uv run matrix-token https://matrix.org @user:matrix.org myclient
+uv tool install .
 ```
 
-### Run Chat Client
+Then use the commands directly:
 ```bash
+# Get access token
+matrix-token <homeserver> <username> [device_name]
+# Example: matrix-token https://matrix.org @user:matrix.org myclient
+
+# Run chat client  
+matrix-chat <homeserver> <user_id> <access_token> <device_id>
+# Example: matrix-chat https://matrix.org @user:matrix.org token123 DEVICE456
+```
+
+### Local Development Usage
+
+For development or one-time usage:
+```bash
+# Get access token
+uv run matrix-token <homeserver> <username> [device_name]
+# Example: uv run matrix-token https://matrix.org @user:matrix.org myclient
+
+# Run chat client
 uv run matrix-chat <homeserver> <user_id> <access_token> <device_id>
 # Example: uv run matrix-chat https://matrix.org @user:matrix.org token123 DEVICE456
 ```

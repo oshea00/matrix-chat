@@ -44,9 +44,9 @@ async def get_matrix_token(homeserver: str, username: str, password: str, device
 
 async def main():
     if len(sys.argv) < 3:
-        print("Usage: python get_token.py <homeserver> <username> [device_name]")
-        print("Example: python get_token.py https://matrix.org poolagent")
-        print("         python get_token.py https://matrix.org @poolagent:matrix.org myclient")
+        print("Usage: matrix-token <homeserver> <username> [device_name]")
+        print("Example: matrix-token https://matrix.org poolagent")
+        print("         matrix-token https://matrix.org @poolagent:matrix.org myclient")
         sys.exit(1)
     
     homeserver = sys.argv[1]
@@ -72,8 +72,8 @@ async def main():
             json.dump(result, f, indent=2)
         
         print(f"\nCredentials saved to {token_file}")
-        print(f"\nTo use with chatcli:")
-        print(f"python3 chatcli.py {homeserver} {result['user_id']} {result['access_token']} {result['device_id']}")
+        print(f"\nTo use with matrix-chat:")
+        print(f"matrix-chat {homeserver} {result['user_id']} {result['access_token']} {result['device_id']}")
         
     except Exception as e:
         print(f"Login failed: {e}")

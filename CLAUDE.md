@@ -32,6 +32,18 @@ uv sync
 ```
 
 ### Running the Applications
+
+#### Global Installation (Recommended)
+```bash
+# Install globally with uv
+uv tool install .
+
+# Then use the commands directly
+matrix-token <homeserver> <username> [device_name]
+matrix-chat <homeserver> <user_id> <access_token> <device_id>
+```
+
+#### Local Development
 ```bash
 # Get access token
 uv run matrix-token <homeserver> <username> [device_name]
@@ -43,11 +55,10 @@ uv run matrix-chat <homeserver> <user_id> <access_token> <device_id>
 ```
 
 ### Console Scripts (via pyproject.toml)
-After running `uv sync`, you can use:
-```bash
-uv run matrix-token   # equivalent to python get_token.py
-uv run matrix-chat    # equivalent to python chatcli.py
-```
+The project defines console scripts that can be used via:
+- `uv tool install .` for global installation
+- `uv run matrix-token` / `uv run matrix-chat` for local development
+- Direct Python execution: `python get_token.py` / `python chatcli.py`
 
 ## Python Requirements
 - Python 3.10+
