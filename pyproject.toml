@@ -1,7 +1,7 @@
 [project]
 name = "matrix-chat"
 version = "1.0.0"
-description = "Simple Matrix chat client and token getter"
+description = "Simple Matrix chat client"
 requires-python = ">=3.10"
 dependencies = [
     "mautrix>=0.20.0",
@@ -19,7 +19,6 @@ classifiers = [
 
 [project.scripts]
 matrix-chat = "chatcli:sync_main"
-matrix-token = "get_token:sync_main"
 
 [build-system]
 requires = ["hatchling"]

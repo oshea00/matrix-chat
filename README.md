@@ -1,11 +1,10 @@
 # Matrix Chat CLI
 
-Simple command-line Matrix chat client with token authentication utility.
+Simple command-line Matrix chat client with integrated authentication.
 
 ## Files
 
-- `chatcli.py` - Main chat client for unencrypted Matrix messaging
-- `get_token.py` - Utility to obtain Matrix access tokens
+- `chatcli.py` - Main chat client for unencrypted Matrix messaging with integrated authentication
 - `pyproject.toml` - Project configuration and dependencies
 
 ## Development
@@ -25,28 +24,42 @@ uv sync
 uv pip install -e .
 ```
 
-### Running Tools
+### Running the Application
 
-You can run the tools directly with uv:
+You can run the chat client directly with uv:
 
 ```bash
-# Get access token
-uv run matrix-token <homeserver> <username> [device_name]
-# Example: uv run matrix-token https://matrix.org @user:matrix.org myclient
+# Basic usage - password will be prompted securely (uses matrix.org by default)
+uv run matrix-chat <username>
+# Example: uv run matrix-chat poolagent
 
-# Run chat client
-uv run matrix-chat <homeserver> <user_id> <access_token> <device_id>
-# Example: uv run matrix-chat https://matrix.org @user:matrix.org token123 DEVICE456
+# With password on command line
+uv run matrix-chat <username> --password <password>
+# Example: uv run matrix-chat poolagent --password mypass
+
+# With custom device name
+uv run matrix-chat <username> --device-name <device_name>
+# Example: uv run matrix-chat poolagent --device-name "laptop-client"
+
+# All options combined
+uv run matrix-chat <username> -p <password> -d <device_name>
+# Example: uv run matrix-chat poolagent -p mypass -d "laptop-client"
+
+# Custom homeserver
+uv run matrix-chat <username> <homeserver>
+# Example: uv run matrix-chat poolagent https://custom.matrix.server
 ```
 
-Or activate the virtual environment and use the installed console scripts:
+Or activate the virtual environment and use the installed console script:
 
 ```bash
 source .venv/bin/activate  # Linux/macOS
 # or .venv\Scripts\activate  # Windows
 
-matrix-token <homeserver> <username> [device_name]
-matrix-chat <homeserver> <user_id> <access_token> <device_id>
+matrix-chat <username>
+matrix-chat <username> --password <password>
+matrix-chat <username> --device-name <device_name>
+matrix-chat <username> <homeserver>  # for custom homeserver
 ```
 
 ### Adding Dependencies
@@ -63,21 +76,18 @@ uv add --dev <package-name>
 
 This project currently relies on manual testing. To test the functionality:
 
-1. **Get a token:**
+1. **Run the chat client:**
    ```bash
-   uv run matrix-token https://matrix.org your_username
+   uv run matrix-chat your_username
+   # Password will be prompted securely (uses matrix.org by default)
    ```
 
-2. **Test the chat client:**
-   ```bash
-   uv run matrix-chat https://matrix.org @your_user:matrix.org your_token your_device_id
-   ```
-
-3. **Test basic functionality:**
+2. **Test basic functionality:**
    - Join a room: `/join #test:matrix.org`
    - Send messages
    - Switch rooms: `/switch #another:matrix.org`
    - List rooms: `/rooms`
+   - Get help: `/help`
 
 ### Building and Packaging
 
@@ -98,31 +108,54 @@ Install the tools globally using uv:
 uv tool install .
 ```
 
-Then use the commands directly:
+Then use the command directly:
 ```bash
-# Get access token
-matrix-token <homeserver> <username> [device_name]
-# Example: matrix-token https://matrix.org @user:matrix.org myclient
+# Basic usage - password prompted securely (uses matrix.org by default)
+matrix-chat <username>
+# Example: matrix-chat poolagent
 
-# Run chat client  
-matrix-chat <homeserver> <user_id> <access_token> <device_id>
-# Example: matrix-chat https://matrix.org @user:matrix.org token123 DEVICE456
+# With password on command line
+matrix-chat <username> --password <password>
+# Example: matrix-chat poolagent --password mypass
+
+# With custom device name
+matrix-chat <username> --device-name <device_name>
+# Example: matrix-chat poolagent --device-name "laptop-client"
+
+# Custom homeserver
+matrix-chat <username> <homeserver>
+# Example: matrix-chat poolagent https://custom.matrix.server
 ```
 
 ### Local Development Usage
 
 For development or one-time usage:
 ```bash
-# Get access token
-uv run matrix-token <homeserver> <username> [device_name]
-# Example: uv run matrix-token https://matrix.org @user:matrix.org myclient
+# Basic usage - password prompted securely (uses matrix.org by default)
+uv run matrix-chat <username>
+# Example: uv run matrix-chat poolagent
 
-# Run chat client
-uv run matrix-chat <homeserver> <user_id> <access_token> <device_id>
-# Example: uv run matrix-chat https://matrix.org @user:matrix.org token123 DEVICE456
+# With options
+uv run matrix-chat <username> --password <password> --device-name <device_name>
+# Example: uv run matrix-chat poolagent --password mypass --device-name "dev-client"
+
+# Custom homeserver
+uv run matrix-chat <username> <homeserver>
+# Example: uv run matrix-chat poolagent https://custom.matrix.server
 ```
 
-## Commands
+## Command-Line Arguments
+
+- `username`: Required. Matrix username (e.g., poolagent or @poolagent:matrix.org)
+- `homeserver`: Optional. Matrix homeserver URL (default: https://matrix.org)
+- `--password` / `-p`: Optional. Matrix password (if not provided, prompted securely)
+- `--device-name` / `-d`: Optional. Device name for session (default: "chatcli")
+
+Use `matrix-chat --help` to see all available options.
+
+## Chat Commands
+
+Once connected, use these commands in the chat interface:
 
 - `/help` - Show available commands
 - `/join <room>` - Join a room
@@ -132,7 +165,10 @@ uv run matrix-chat <homeserver> <user_id> <access_token> <device_id>
 
 ## Features
 
-- Unencrypted messaging only (simple and reliable)
-- Room joining and switching
-- Real-time message display
-- Automatic room name resolution
+- **Integrated authentication**: No separate token generation step required
+- **Secure password handling**: Password prompted securely by default
+- **Automatic token refresh**: Handles expired tokens transparently
+- **Unencrypted messaging**: Simple and reliable (by design)
+- **Room management**: Join, switch, and list rooms with alias support
+- **Real-time messaging**: Live message display with room context
+- **Command-line friendly**: Clear argument structure with help system

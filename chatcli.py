@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import argparse
 import asyncio
 import logging
 import readline
 import sys
+from getpass import getpass
 from pathlib import Path
 from typing import Optional
 
@@ -29,41 +31,71 @@ def get_input_with_history(prompt: str) -> str:
     return input(prompt)
 
 
+async def get_matrix_token(homeserver: str, username: str, password: str, device_name: str = "chatcli"):
+    """Get a Matrix access token using login credentials"""
+    
+    # Create a temporary API client without token for login
+    api = HTTPAPI(homeserver)
+    
+    try:
+        # Prepare login data
+        login_data = {
+            "type": "m.login.password",
+            "user": username,
+            "password": password,
+            "initial_device_display_name": device_name
+        }
+        
+        # Make login request
+        response = await api.request(
+            method="POST",
+            path="/_matrix/client/r0/login",
+            content=login_data
+        )
+        
+        return {
+            "access_token": response["access_token"],
+            "device_id": response["device_id"],
+            "user_id": response["user_id"]
+        }
+        
+    finally:
+        # Close the session
+        if api.session and not api.session.closed:
+            await api.session.close()
+
+
 class SimpleChatClient:
     def __init__(
         self,
         homeserver: str,
         user_id: UserID,
-        access_token: str,
-        device_id: str,
+        username: str,
+        password: str,
+        device_name: str = "chatcli",
     ):
         self.homeserver = homeserver
         self.user_id = user_id
-        self.device_id = device_id
+        self.username = username
+        self.password = password
+        self.device_name = device_name
+        self.access_token = None
+        self.device_id = None
         
         self.log = logging.getLogger("chatcli")
-        self.api = HTTPAPI(homeserver, access_token)
+        self.api = None
         
         # Use memory stores for simplicity
         self.state_store = MemoryStateStore()
         self.sync_store = MemorySyncStore()
         
-        self.client = Client(
-            api=self.api,
-            user_id=user_id,
-            device_id=device_id,
-            state_store=self.state_store,
-            sync_store=self.sync_store,
-        )
+        self.client = None
         
         self.current_room: Optional[RoomID] = None
         self.running = False
         self.sync_task: Optional[asyncio.Task] = None
         self.initial_sync_complete = False
         
-        # Event handlers
-        self.client.add_event_handler(EventType.ROOM_MESSAGE, self._handle_message)
-        self.client.add_event_handler(EventType.ROOM_MEMBER, self._handle_member)
 
     async def get_room_canonical_alias(self, room_id: RoomID) -> str | None:
         """Get the canonical alias for a room"""
@@ -84,6 +116,52 @@ class SimpleChatClient:
         except Exception as e:
             self.log.debug(f"Failed to get alt aliases for {room_id}: {e}")
         return []
+
+    async def authenticate(self):
+        """Authenticate and get access token"""
+        try:
+            self.log.info(f"Authenticating {self.username} with {self.homeserver}...")
+            
+            result = await get_matrix_token(self.homeserver, self.username, self.password, self.device_name)
+            
+            self.access_token = result["access_token"]
+            self.device_id = result["device_id"]
+            self.user_id = UserID(result["user_id"])
+            
+            # Initialize API client with token
+            self.api = HTTPAPI(self.homeserver, self.access_token)
+            
+            # Initialize Matrix client
+            self.client = Client(
+                api=self.api,
+                user_id=self.user_id,
+                device_id=self.device_id,
+                state_store=self.state_store,
+                sync_store=self.sync_store,
+            )
+            
+            # Event handlers
+            self.client.add_event_handler(EventType.ROOM_MESSAGE, self._handle_message)
+            self.client.add_event_handler(EventType.ROOM_MEMBER, self._handle_member)
+            
+            self.log.info(f"Authentication successful for {self.user_id}")
+            
+        except Exception as e:
+            self.log.error(f"Authentication failed: {e}")
+            raise
+    
+    async def reauthenticate(self):
+        """Re-authenticate if token expires"""
+        self.log.info("Token expired, re-authenticating...")
+        
+        # Close existing session
+        if self.api and self.api.session and not self.api.session.closed:
+            await self.api.session.close()
+        
+        # Re-authenticate
+        await self.authenticate()
+        
+        self.log.info("Re-authentication successful")
 
     async def start(self):
         """Initialize the client and start syncing"""
@@ -229,7 +307,17 @@ class SimpleChatClient:
             
             self.log.debug(f"Sent unencrypted message to {target_room}")
         except Exception as e:
-            self.log.error(f"Failed to send message: {e}")
+            # Check if token expired and try to re-authenticate
+            if "M_UNKNOWN_TOKEN" in str(e) or "Invalid access token" in str(e):
+                try:
+                    await self.reauthenticate()
+                    # Retry sending the message
+                    await self.client.send_message(target_room, content)
+                    self.log.debug(f"Sent unencrypted message to {target_room} (after re-auth)")
+                except Exception as retry_e:
+                    self.log.error(f"Failed to send message after re-authentication: {retry_e}")
+            else:
+                self.log.error(f"Failed to send message: {e}")
 
     async def list_rooms(self):
         """List joined rooms with names and aliases when available"""
@@ -327,12 +415,39 @@ class SimpleChatClient:
 
 
 async def main():
-    if len(sys.argv) != 5:
-        print("Usage: matrix-chat <homeserver> <user_id> <access_token> <device_id>")
-        print("Example: matrix-chat https://matrix.org @user:matrix.org token DEVICE123")
-        sys.exit(1)
-        
-    homeserver, user_id, access_token, device_id = sys.argv[1:5]
+    parser = argparse.ArgumentParser(
+        prog="matrix-chat",
+        description="Simple Matrix chat client with integrated authentication",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  matrix-chat poolagent
+  matrix-chat poolagent --password mypass
+  matrix-chat poolagent --device-name myclient
+  matrix-chat poolagent -p mypass -d myclient
+  matrix-chat poolagent https://custom.matrix.server
+
+Note: If --password is not provided, you will be prompted securely
+      Homeserver defaults to https://matrix.org if not specified
+        """
+    )
+    
+    parser.add_argument("username", help="Matrix username (e.g., poolagent or @poolagent:matrix.org)")
+    parser.add_argument("homeserver", nargs="?", default="https://matrix.org", help="Matrix homeserver URL (default: https://matrix.org)")
+    parser.add_argument("-p", "--password", help="Matrix password (if not provided, will be prompted securely)")
+    parser.add_argument("-d", "--device-name", default="chatcli", help="Device name for this session (default: chatcli)")
+    
+    args = parser.parse_args()
+    
+    homeserver = args.homeserver
+    username = args.username
+    device_name = args.device_name
+    
+    # Get password from argument or prompt securely
+    if args.password:
+        password = args.password
+    else:
+        password = getpass(f"Password for {username}: ")
     
     # Setup logging
     logging.basicConfig(
@@ -340,9 +455,13 @@ async def main():
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
     
-    client = SimpleChatClient(homeserver, UserID(user_id), access_token, device_id)
+    client = SimpleChatClient(homeserver, UserID(username), username, password, device_name)
     
     try:
+        # Authenticate first
+        await client.authenticate()
+        
+        # Then start the client
         await client.start()
         
         # Wait for initial sync to settle before starting interactive session
