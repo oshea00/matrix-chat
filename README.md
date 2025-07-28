@@ -2,7 +2,15 @@
 
 Simple command-line Matrix chat client with integrated authentication, plus an MCP server for AI agent integration.
 
-## Components
+## Matrix Chat Client Features
+
+- **Integrated authentication**: No separate token generation step required
+- **Secure password handling**: Password prompted securely by default
+- **Automatic token refresh**: Handles expired tokens transparently
+- **Unencrypted messaging**: Simple and reliable (by design)
+- **Room management**: Join, switch, and list rooms with alias support
+- **Real-time messaging**: Live message display with room context
+- **Command-line friendly**: Clear argument structure with help system## Components
 
 ### Matrix Chat Client
 - `chatcli.py` - Interactive chat client for unencrypted Matrix messaging
@@ -242,12 +250,72 @@ response = wait_for_response(
 )
 ```
 
-## Matrix Chat Client Features
+## Testing the MCP Server
 
-- **Integrated authentication**: No separate token generation step required
-- **Secure password handling**: Password prompted securely by default
-- **Automatic token refresh**: Handles expired tokens transparently
-- **Unencrypted messaging**: Simple and reliable (by design)
-- **Room management**: Join, switch, and list rooms with alias support
-- **Real-time messaging**: Live message display with room context
-- **Command-line friendly**: Clear argument structure with help system
+### MCP Inspector - Interactive Testing
+
+The MCP Inspector provides a web-based interface to test your Matrix messaging tools interactively.
+
+#### Starting the MCP Development Environment
+
+1. **Set your environment variables:**
+   ```bash
+   export MATRIX_USERNAME="your-bot@matrix.org"
+   export MATRIX_PASSWORD="your-password"
+   ```
+
+2. **Start the MCP development server:**
+   ```bash
+   mcp dev matrix_mcp_server.py
+   ```
+
+   You'll see output like this:
+
+   ![Starting MCP Dev Server](images/startmcpdev.png)
+
+   The server will:
+   - Start the MCP Inspector on localhost:6274
+   - Provide a session token for authentication
+   - Automatically open your browser to the inspector
+
+#### Using the MCP Inspector
+
+The web interface shows all available tools and lets you test them interactively:
+
+![MCP Inspector Interface](images/mcpinspector.png)
+
+**Available tools:**
+- **send_message** - Send messages to Matrix rooms
+- **wait_for_response** - Send message and wait for human response  
+- **list_rooms** - List joined Matrix rooms
+
+**Testing send_message:**
+1. Select the `send_message` tool
+2. Fill in the room ID (e.g., `#clearchat:matrix.org`) 
+3. Enter your message text
+4. Click "Run Tool"
+
+#### Real-time Matrix Integration
+
+Messages sent via the MCP tools appear instantly in Matrix clients:
+
+![Matrix Mobile Response](images/mcpscreenchat.png)
+
+The screenshots show:
+- MCP server sending "Hello from MCP" to the #clearchat room
+- Message appearing immediately in Element mobile app
+- Two-way communication working (human reply: "Hi back")
+
+![Matrix Chat List](images/mcpresponse.png)
+
+The message appears in the Matrix chat list showing successful integration.
+
+#### Interactive Response Testing
+
+Test the `wait_for_response` tool:
+1. Send a message that asks for input
+2. The tool waits for a human response in Matrix
+3. Returns the response content to your agent
+
+This enables approval workflows and human-in-the-loop AI systems.
+

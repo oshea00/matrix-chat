@@ -30,4 +30,6 @@ build-backend = "hatchling.build"
 packages = ["."]
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = [
+    "mcp[cli]>=1.12.2",
+]
