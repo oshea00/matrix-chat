@@ -1,10 +1,19 @@
-# Matrix Chat CLI
+# Matrix Chat CLI & MCP Server
 
-Simple command-line Matrix chat client with integrated authentication.
+Simple command-line Matrix chat client with integrated authentication, plus an MCP server for AI agent integration.
 
-## Files
+## Components
 
-- `chatcli.py` - Main chat client for unencrypted Matrix messaging with integrated authentication
+### Matrix Chat Client
+- `chatcli.py` - Interactive chat client for unencrypted Matrix messaging
+- Console command: `matrix-chat`
+
+### MCP Server for AI Agents  
+- `matrix_mcp_server.py` - MCP server exposing Matrix messaging tools for AI agents
+- Console command: `matrix-mcp-server`
+- Design document: `MCPDESIGN.md`
+
+### Configuration
 - `pyproject.toml` - Project configuration and dependencies
 
 ## Development
@@ -163,7 +172,77 @@ Once connected, use these commands in the chat interface:
 - `/rooms` - List joined rooms
 - `/quit` - Exit client
 
-## Features
+## MCP Server for AI Agents
+
+The MCP server (`matrix-mcp-server`) exposes Matrix messaging capabilities as tools for AI agents like HuggingFace SmolAgents.
+
+### MCP Tools Available
+
+- **`send_message`** - Send messages to Matrix rooms
+- **`wait_for_response`** - Send message and wait for human response (with timeout)
+- **`list_rooms`** - List joined Matrix rooms with names and aliases
+
+### Running the MCP Server
+
+#### Environment Setup
+```bash
+# Required environment variables
+export MATRIX_USERNAME="your-bot@matrix.org"
+export MATRIX_PASSWORD="your-password"
+
+# Optional environment variables
+export MATRIX_HOMESERVER="https://matrix.org"  # default
+export MATRIX_DEVICE_NAME="mcp-server"        # default
+```
+
+#### Starting the Server
+```bash
+# Global installation
+uv tool install .
+matrix-mcp-server
+
+# Local development
+uv run matrix-mcp-server
+```
+
+### SmolAgents Integration
+
+```python
+from smolagents import CodeAgent, InferenceClientModel, ToolCollection
+
+# Load Matrix MCP tools
+model = InferenceClientModel()
+matrix_tools = ToolCollection.from_mcp("matrix-mcp-server")
+
+agent = CodeAgent(tools=matrix_tools, model=model)
+
+# Agent can now send Matrix messages
+result = agent.run("Send a status update to #ops room when analysis is complete")
+```
+
+### MCP Usage Examples
+
+#### Agent Notifications
+```python
+# Agent sends completion notification
+send_message(
+    room_id="#ops:company.com", 
+    message="🤖 Data analysis completed successfully!"
+)
+```
+
+#### Interactive Approval Workflows  
+```python
+# Agent requests approval and waits for response
+response = wait_for_response(
+    room_id="#approvals:company.com",
+    message="🤖 Ready to deploy to production. Reply 'approve' to proceed.",
+    timeout_seconds=600,
+    response_from="@admin:company.com"
+)
+```
+
+## Matrix Chat Client Features
 
 - **Integrated authentication**: No separate token generation step required
 - **Secure password handling**: Password prompted securely by default
