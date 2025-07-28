@@ -405,7 +405,7 @@ The interactive quote bot works seamlessly across Matrix clients:
 
 The screenshot shows:
 - Bot greeting and category options
-- User requesting a "creativity" quote
+- User requesting a "random" quote
 - Bot responding with a relevant, nicely formatted quote
 - Natural conversation flow in Matrix mobile client
 
