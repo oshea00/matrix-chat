@@ -93,6 +93,7 @@ python chatcli.py <username> --device-name <device_name>
 # Required environment variables
 export MATRIX_USERNAME="your-bot@matrix.org"
 export MATRIX_PASSWORD="your-password"
+export MATRIX_ROOMID="#room:matrix.org"
 
 # Optional environment variables
 export MATRIX_HOMESERVER="https://matrix.org"  # default
@@ -157,6 +158,7 @@ matrix-chat @poolagent:matrix.org --password mypassword
 # Set environment variables
 export MATRIX_USERNAME="bot@matrix.org"
 export MATRIX_PASSWORD="bot-password"
+export MATRIX_ROOMID="#ops:matrix.org"
 export MATRIX_DEVICE_NAME="ai-agent-bot"
 
 # Run MCP server

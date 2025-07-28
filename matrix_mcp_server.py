@@ -28,6 +28,7 @@ class PendingResponse:
 # Global state for Matrix client and pending responses
 matrix_client: Optional[SimpleChatClient] = None
 pending_responses: Dict[str, PendingResponse] = {}
+default_room_id: Optional[str] = None
 
 # Create FastMCP server
 app = FastMCP("matrix-mcp-server")
@@ -35,7 +36,7 @@ app = FastMCP("matrix-mcp-server")
 
 async def initialize_client():
     """Initialize Matrix client from environment variables"""
-    global matrix_client
+    global matrix_client, default_room_id
     
     if matrix_client:
         return matrix_client
@@ -44,9 +45,13 @@ async def initialize_client():
     password = os.getenv("MATRIX_PASSWORD") 
     homeserver = os.getenv("MATRIX_HOMESERVER", "https://matrix.org")
     device_name = os.getenv("MATRIX_DEVICE_NAME", "mcp-server")
+    default_room_id = os.getenv("MATRIX_ROOMID")
     
-    if not username or not password:
-        raise ValueError("MATRIX_USERNAME and MATRIX_PASSWORD environment variables required")
+    if not username or not password or not default_room_id:
+        raise ValueError("MATRIX_USERNAME, MATRIX_PASSWORD, and MATRIX_ROOMID environment variables required")
+    
+    # Set global default room ID
+    globals()['default_room_id'] = default_room_id
         
     matrix_client = SimpleChatClient(
         homeserver=homeserver,
@@ -113,19 +118,30 @@ async def check_pending_responses(evt):
 
 @app.tool()
 async def send_message(
-    room_id: str,
     message: str,
+    room_id: Optional[str] = None,
     join_if_needed: bool = True
 ) -> str:
     """Send a message to a Matrix room.
     
+    Use this tool with keyword arguments only, like:
+    send_message(message="your message text")
+    or
+    send_message(message="your message text", room_id="#specific:room.com")
+    
     Args:
-        room_id: Room ID or alias (e.g., #room:server.com)
         message: Message text to send
+        room_id: Room ID or alias (e.g., #room:server.com). If not provided, uses MATRIX_ROOMID environment variable
         join_if_needed: Auto-join room if not already joined
     """
     try:
         client = await initialize_client()
+        
+        # Use default room if none specified
+        if room_id is None:
+            room_id = default_room_id
+            if room_id is None:
+                return "Error: No room_id provided and MATRIX_ROOMID environment variable not set"
         
         # Convert to RoomID if needed
         if room_id.startswith('#'):
@@ -154,16 +170,21 @@ async def send_message(
 
 @app.tool()
 async def wait_for_response(
-    room_id: str,
     message: str,
+    room_id: Optional[str] = None,
     timeout_seconds: int = 300,
     response_from: Optional[str] = None
 ) -> str:
     """Send message and wait for human response in specified room.
     
+    Use this tool with keyword arguments only, like:
+    wait_for_response(message="your message text")
+    or
+    wait_for_response(message="your message text", room_id="#specific:room.com", timeout_seconds=300)
+    
     Args:
-        room_id: Room ID or alias
         message: Message to send before waiting
+        room_id: Room ID or alias. If not provided, uses MATRIX_ROOMID environment variable
         timeout_seconds: Max wait time (default: 5 min)
         response_from: Optional specific user ID to wait for
     """
@@ -172,8 +193,14 @@ async def wait_for_response(
     try:
         client = await initialize_client()
         
+        # Use default room if none specified
+        if room_id is None:
+            room_id = default_room_id
+            if room_id is None:
+                return "Error: No room_id provided and MATRIX_ROOMID environment variable not set"
+        
         # First send the message
-        send_result = await send_message(room_id, message, join_if_needed=True)
+        send_result = await send_message(message, room_id, join_if_needed=True)
         if send_result.startswith("Error"):
             return send_result
         
@@ -296,8 +323,22 @@ server = app
 mcp = app
 
 
+def sync_main():
+    """Synchronous entry point for console script"""
+    try:
+        app.run("stdio")  # FastMCP handles its own event loop
+    except KeyboardInterrupt:
+        logger.info("Server interrupted")
+    finally:
+        # Run cleanup in a new event loop since the main one is closed
+        try:
+            asyncio.run(cleanup())
+        except Exception as e:
+            logger.error(f"Cleanup error: {e}")
+
+
 async def main():
-    """Main MCP server entry point"""
+    """Async main function for direct execution"""
     try:
         await app.run("stdio")
     except KeyboardInterrupt:
@@ -307,4 +348,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sync_main()

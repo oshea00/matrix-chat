@@ -197,6 +197,7 @@ The MCP server (`matrix-mcp-server`) exposes Matrix messaging capabilities as to
 # Required environment variables
 export MATRIX_USERNAME="your-bot@matrix.org"
 export MATRIX_PASSWORD="your-password"
+export MATRIX_ROOMID="#room:matrix.org"
 
 # Optional environment variables
 export MATRIX_HOMESERVER="https://matrix.org"  # default
@@ -262,6 +263,7 @@ The MCP Inspector provides a web-based interface to test your Matrix messaging t
    ```bash
    export MATRIX_USERNAME="your-bot@matrix.org"
    export MATRIX_PASSWORD="your-password"
+   export MATRIX_ROOMID="#test:matrix.org"
    ```
 
 2. **Start the MCP development server:**
@@ -318,4 +320,106 @@ Test the `wait_for_response` tool:
 3. Returns the response content to your agent
 
 This enables approval workflows and human-in-the-loop AI systems.
+
+## SmolAgents Examples
+
+The project includes two example SmolAgents scripts that demonstrate Matrix messaging integration:
+
+### Setup Requirements
+
+1. **Install the package:**
+   ```bash
+   uv tool install .
+   ```
+
+2. **Install SmolAgents:**
+   ```bash
+   pip install smolagents
+   ```
+
+3. **Set environment variables:**
+   ```bash
+   export MATRIX_USERNAME="your-bot@matrix.org"
+   export MATRIX_PASSWORD="your-password"
+   export MATRIX_ROOMID="#test:matrix.org"
+   ```
+
+4. **Verify setup:**
+   ```bash
+   python setup_verification.py
+   ```
+
+### Example Scripts
+
+#### Simple Quote Agent (`quote_agent_example.py`)
+
+Sends a single random inspirational quote to Matrix and exits:
+
+```bash
+python quote_agent_example.py
+```
+
+**Features:**
+- Selects a random inspirational quote
+- Sends it to the configured Matrix room
+- Formats with emojis for engagement
+- Exits gracefully after sending
+
+#### Interactive Quote Bot (`interactive_quote_agent.py`)
+
+A more advanced bot that can run in different modes:
+
+**1. Interactive Mode (default):**
+```bash
+python interactive_quote_agent.py
+```
+- Runs continuously, waiting for user requests
+- Responds to different quote categories (motivation, wisdom, creativity, etc.)
+- Loops indefinitely until manually stopped
+
+**2. Oneshot Mode - Ask for Category:**
+```bash
+python interactive_quote_agent.py --oneshot
+```
+- Asks user what type of quote they want
+- Sends one quote based on their response
+- Exits gracefully
+
+**3. Oneshot Mode - Direct Category:**
+```bash
+python interactive_quote_agent.py --oneshot --category motivation
+python interactive_quote_agent.py --oneshot --category wisdom
+python interactive_quote_agent.py --oneshot --category creativity
+python interactive_quote_agent.py --oneshot --category perseverance
+python interactive_quote_agent.py --oneshot --category random
+```
+- Sends a quote from the specified category immediately
+- No user interaction required
+- Perfect for automation and scheduled tasks
+
+### Real-world Usage
+
+The interactive quote bot works seamlessly across Matrix clients:
+
+![Interactive Quote Bot on Mobile](images/interactivequote.png)
+
+The screenshot shows:
+- Bot greeting and category options
+- User requesting a "creativity" quote
+- Bot responding with a relevant, nicely formatted quote
+- Natural conversation flow in Matrix mobile client
+
+### Integration with Automation
+
+The oneshot modes are perfect for:
+- **Scheduled delivery**: Use cron jobs to send daily motivational quotes
+- **Webhook integration**: Trigger quotes from other systems
+- **CI/CD notifications**: Send team morale boosts after successful deployments
+- **Slack replacement**: Automated team engagement via Matrix
+
+**Example cron job for daily motivation:**
+```bash
+# Send a daily motivational quote at 9 AM
+0 9 * * * /usr/bin/python3 /path/to/interactive_quote_agent.py --oneshot --category motivation
+```
 
