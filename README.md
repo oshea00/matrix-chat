@@ -2,6 +2,8 @@
 
 Simple command-line Matrix chat client with integrated authentication, plus an MCP server for AI agent integration.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/oshea00/matrix-chat)
+
 ## Matrix Chat Client Features
 
 - **Integrated authentication**: No separate token generation step required
