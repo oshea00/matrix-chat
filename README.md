@@ -21,7 +21,7 @@ Simple command-line Matrix chat client with integrated authentication, plus an M
 ### MCP Server for AI Agents  
 - `matrix_mcp_server.py` - MCP server exposing Matrix messaging tools for AI agents
 - Console command: `matrix-mcp-server`
-- Design document: `MCPDESIGN.md`
+- Design document: `docs/MCPDESIGN.md`
 
 ### Configuration
 - `pyproject.toml` - Project configuration and dependencies
